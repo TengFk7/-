@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Smart Parking Monitor</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+    <div class="app-container">
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <div class="logo-container">
+                <div class="logo-icon"></div>
+                <h1>ParkMonitor</h1>
+            </div>
+            
+            <nav class="nav-menu">
+                <button class="nav-item active" id="btn-camera" onclick="switchMode('camera')">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path><circle cx="12" cy="13" r="4"></circle></svg>
+                    Live Camera
+                </button>
+                <button class="nav-item" id="btn-upload" onclick="switchMode('upload')">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
+                    Upload Video
+                </button>
+            </nav>
+
+            <div class="status-panel">
+                <h3>System Status</h3>
+                <div class="status-indicator">
+                    <span class="dot online"></span>
+                    <span>AI Engine Active</span>
+                </div>
+                <div class="status-indicator toggle-container">
+                    <span>Test Mode (1s = 1m)</span>
+                    <label class="switch">
+                        <input type="checkbox" id="test-mode-toggle" checked onchange="toggleTestMode()">
+                        <span class="slider round"></span>
+                    </label>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <header class="topbar">
+                <h2 id="mode-title">Live Camera Feed</h2>
+            </header>
+
+            <div class="content-area">
+                <!-- Camera View -->
+                <div id="view-camera" class="view-section active">
+                    <div class="video-container glass-panel">
+                        <div class="video-wrapper">
+                            <!-- Image tag for MJPEG stream -->
+                            <img id="live-stream" src="/video_feed" alt="Live Camera Stream" />
+                        </div>
+                        <div class="overlay-controls">
+                            <span class="live-badge">LIVE</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Upload View -->
+                <div id="view-upload" class="view-section hidden">
+                    <div class="upload-container glass-panel">
+                        <div class="upload-zone" id="drop-zone">
+                            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
+                            <h3>Upload Video for Analysis</h3>
+                            <p>Drag and drop an .mp4 file here, or click to browse</p>
+                            <input type="file" id="file-input" accept="video/mp4" hidden>
+                            <button class="btn-primary" onclick="document.getElementById('file-input').click()">Select File</button>
+                        </div>
+                        
+                        <div id="upload-progress" class="progress-container hidden">
+                            <h4 id="progress-text">Processing Video with AI Engine...</h4>
+                            <div class="progress-bar-wrapper">
+                                <div class="progress-bar indeterminate"></div>
+                            </div>
+                            <p class="progress-hint">This may take a while depending on video length.</p>
+                        </div>
+
+                        <div id="result-container" class="result-container hidden">
+                            <h4>Analysis Complete</h4>
+                            <div class="video-player-wrapper">
+                                <video id="result-video" controls class="result-video"></video>
+                            </div>
+                            <div class="action-buttons">
+                                <a id="download-btn" href="#" class="btn-secondary" download>
+                                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+                                    Download Result
+                                </a>
+                                <button class="btn-outline" onclick="resetUpload()">Analyze Another</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+    <script src="/static/main.js?v=2"></script>
+</body>
+</html>
