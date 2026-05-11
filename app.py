@@ -20,9 +20,17 @@ _live_stats = {
     'ok': 0,
     'warning': 0,
     'violation': 0,
-    'vehicles': []   # list of {id, duration_s, status}
+    'vehicles': [],   # list of {id, duration_s, status}
+    'alerts': []      # new alert events to consume by frontend
 }
 _stats_lock = threading.Lock()
+
+# ── Alert tracking sets (prevent duplicate alerts per vehicle) ───────
+_warned_ids   = set()
+_violated_ids = set()
+
+# ── Reference to active live monitor (for runtime updates) ────────
+_current_monitor = None
 
 def _make_monitor_with_stats(test_mode=True):
     """Return a ParkingMonitor whose process_frame also pushes stats."""
@@ -36,23 +44,51 @@ def _make_monitor_with_stats(test_mode=True):
 
         vehicles = []
         ok = warning = violation = 0
+        new_alerts = []
+        current_display_ids = set()
+
         for tid, info in monitor.tracked_vehicles.items():
             dur = current_time - info['first_seen']
+            did = info['display_id']
+            current_display_ids.add(did)
+
             if dur <= monitor.TIME_10_MINS:
                 status = 'OK'; ok += 1
             elif dur <= monitor.TIME_15_MINS:
                 status = 'WARNING'; warning += 1
+                # แจ้งเตือน WARNING ครั้งแรก
+                if did not in _warned_ids:
+                    _warned_ids.add(did)
+                    new_alerts.append({
+                        'type': 'warning',
+                        'message': f'Vehicle #{did} has been parked for over 10 minutes',
+                        'vehicle_id': did
+                    })
             else:
                 status = 'VIOLATION'; violation += 1
+                # แจ้งเตือน VIOLATION ครั้งแรก
+                if did not in _violated_ids:
+                    _violated_ids.add(did)
+                    new_alerts.append({
+                        'type': 'violation',
+                        'message': f'Vehicle #{did} VIOLATION — parked over 15 minutes!',
+                        'vehicle_id': did
+                    })
+
             if monitor.test_mode:
                 dur_label = f"{int(dur)}m 0s"
             else:
                 dur_label = f"{int(dur//60)}m {int(dur%60)}s"
             vehicles.append({
-                'id': info['display_id'],
+                'id': did,
                 'duration': dur_label,
                 'status': status
             })
+
+        # ล้าง alert sets สำหรับรถที่หายออกจาก tracking
+        gone_ids = (_warned_ids | _violated_ids) - current_display_ids
+        _warned_ids.difference_update(gone_ids)
+        _violated_ids.difference_update(gone_ids)
 
         vehicles.sort(key=lambda v: v['id'])
 
@@ -62,6 +98,8 @@ def _make_monitor_with_stats(test_mode=True):
             _live_stats['warning']   = warning
             _live_stats['violation'] = violation
             _live_stats['vehicles']  = vehicles[:20]   # cap list
+            # สะสม alerts ไว้ อย่า overwrite ทุก frame!
+            _live_stats['alerts'].extend(new_alerts)
 
         return out
 
@@ -77,8 +115,18 @@ def index():
 
 @app.route('/video_feed')
 def video_feed():
+    global _warned_ids, _violated_ids, _current_monitor
+
+    # รีเซ็ต state เมื่อ page load / refresh (ไม่ใช่ตอน toggle test mode)
+    _warned_ids   = set()
+    _violated_ids = set()
+    with _stats_lock:
+        _live_stats.update({'total': 0, 'ok': 0, 'warning': 0,
+                            'violation': 0, 'vehicles': [], 'alerts': []})
+
     test_mode = request.args.get('test_mode', 'true') == 'true'
     monitor   = _make_monitor_with_stats(test_mode=test_mode)
+    _current_monitor = monitor   # เก็บ reference ไว้ให้ /set_test_mode ใช้
 
     def stream():
         import cv2
@@ -109,10 +157,33 @@ def video_feed():
     return Response(stream(), mimetype='multipart/x-mixed-replace; boundary=frame')
 
 
+@app.route('/set_test_mode')
+def set_test_mode():
+    """Toggle test/real mode WITHOUT restarting the webcam stream."""
+    global _warned_ids, _violated_ids, _current_monitor
+    test_mode = request.args.get('test_mode', 'true') == 'true'
+
+    if _current_monitor is not None:
+        # อัปเดต threshold ใน monitor ที่กำลังรัน
+        _current_monitor.test_mode    = test_mode
+        _current_monitor.TIME_10_MINS = 10       if test_mode else 10 * 60
+        _current_monitor.TIME_15_MINS = 15       if test_mode else 15 * 60
+
+    # Reset alert sets ให้แจ้งเตือนใหม่ตาม threshold ที่เปลี่ยน
+    _warned_ids   = set()
+    _violated_ids = set()
+    with _stats_lock:
+        _live_stats['alerts'] = []
+
+    return jsonify({'ok': True, 'test_mode': test_mode})
+
 @app.route('/stats')
 def stats():
     with _stats_lock:
-        return jsonify(dict(_live_stats))
+        result = dict(_live_stats)
+        result['alerts'] = list(_live_stats['alerts'])  # snapshot ก่อนส่ง
+        _live_stats['alerts'] = []                      # ล้างหลังอ่านแล้ว
+    return jsonify(result)
 
 
 @app.route('/upload', methods=['POST'])

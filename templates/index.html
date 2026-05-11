@@ -168,54 +168,148 @@
             </div>
         </div>
 
-        <div class="upload-center">
-            <div class="upload-card">
+        <!-- Stat Cards Row (mirrors camera) -->
+        <div class="stat-row">
+            <div class="stat-card">
+                <span class="stat-label">Total Detected</span>
+                <div class="stat-value" id="up-stat-total">—</div>
+                <span class="stat-tag tag-neutral">vehicles</span>
+            </div>
+            <div class="stat-card">
+                <span class="stat-label">OK</span>
+                <div class="stat-value green" id="up-stat-ok">—</div>
+                <span class="stat-tag tag-green">≤ 10 min</span>
+            </div>
+            <div class="stat-card">
+                <span class="stat-label">Warning</span>
+                <div class="stat-value yellow" id="up-stat-warning">—</div>
+                <span class="stat-tag tag-yellow">10–15 min</span>
+            </div>
+            <div class="stat-card">
+                <span class="stat-label">Violation</span>
+                <div class="stat-value red" id="up-stat-violation">—</div>
+                <span class="stat-tag tag-red">&gt; 15 min</span>
+            </div>
+        </div>
 
-                <!-- Drop Zone -->
-                <div class="drop-zone" id="drop-zone">
-                    <div class="drop-icon-wrap">
-                        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
-                    </div>
-                    <p class="drop-title">Drop MP4 file here</p>
-                    <p class="drop-sub">or click to browse your computer</p>
-                    <input type="file" id="file-input" accept="video/mp4" hidden>
-                    <button class="btn-violet" onclick="document.getElementById('file-input').click()">Select File</button>
-                </div>
+        <!-- Main Dashboard Grid (identical structure to camera) -->
+        <div class="dash-grid">
 
-                <!-- Processing -->
-                <div id="upload-progress" class="proc-state hidden">
-                    <div class="spinner"></div>
-                    <p class="proc-title">Processing with AI Engine…</p>
-                    <p class="proc-sub">This may take a while depending on video length</p>
-                    <div class="prog-track"><div class="prog-fill"></div></div>
-                </div>
-
-                <!-- Result -->
-                <div id="result-container" class="result-state hidden">
-                    <div class="result-top">
-                        <div class="check-circle">
-                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+            <!-- Left Panel: Legend + Settings -->
+            <aside class="panel panel-left">
+                <div class="panel-section">
+                    <p class="panel-heading">Detection Legend</p>
+                    <div class="legend-item">
+                        <span class="legend-dot dot-green"></span>
+                        <div>
+                            <p class="legend-name">OK</p>
+                            <p class="legend-desc">Parked under 10 min</p>
                         </div>
-                        <span class="result-label">Analysis Complete</span>
                     </div>
-                    <div class="result-video-box">
+                    <div class="legend-item">
+                        <span class="legend-dot dot-yellow"></span>
+                        <div>
+                            <p class="legend-name">Warning</p>
+                            <p class="legend-desc">10 – 15 minutes</p>
+                        </div>
+                    </div>
+                    <div class="legend-item">
+                        <span class="legend-dot dot-red"></span>
+                        <div>
+                            <p class="legend-name">Violation</p>
+                            <p class="legend-desc">Over 15 minutes</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="panel-section">
+                    <p class="panel-heading">Settings</p>
+                    <div class="info-row">
+                        <span class="info-key">Mode</span>
+                        <span class="info-val" id="up-mode-display">Test</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-key">Model</span>
+                        <span class="info-val">YOLOv8m</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-key">Confidence</span>
+                        <span class="info-val">0.25</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-key">Tracker</span>
+                        <span class="info-val">ByteTrack</span>
+                    </div>
+                </div>
+            </aside>
+
+            <!-- Center: Upload / Processing / Result Video -->
+            <div class="video-wrap">
+                <div class="video-inner upload-video-inner">
+
+                    <!-- Drop Zone -->
+                    <div class="drop-zone" id="drop-zone">
+                        <div class="drop-icon-wrap">
+                            <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+                        </div>
+                        <p class="drop-title">Drop MP4 file here</p>
+                        <p class="drop-sub">or click to browse your computer</p>
+                        <input type="file" id="file-input" accept="video/mp4" hidden>
+                        <button class="btn-violet" onclick="document.getElementById('file-input').click()">Select File</button>
+                    </div>
+
+                    <!-- Processing -->
+                    <div id="upload-progress" class="proc-state hidden">
+                        <div class="spinner"></div>
+                        <p class="proc-title">Processing with AI Engine…</p>
+                        <p class="proc-sub">This may take a while depending on video length</p>
+                        <div class="prog-track" style="width:220px;"><div class="prog-fill"></div></div>
+                    </div>
+
+                    <!-- Result Video -->
+                    <div id="result-container" class="result-video-state hidden">
+                        <div class="result-badge">
+                            <div class="check-circle">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                            </div>
+                            <span>Analysis Complete</span>
+                        </div>
                         <video id="result-video" controls></video>
                     </div>
-                    <div class="result-actions">
-                        <a id="download-btn" href="#" class="btn-violet" download>
-                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-                            Download
-                        </a>
-                        <button class="btn-outline" onclick="resetUpload()">Analyze Another</button>
-                    </div>
+
                 </div>
 
+                <!-- Bottom bar (mirrors live-badge area) -->
+                <div class="upload-bottom-bar" id="upload-bottom-bar" style="display:none;">
+                    <a id="download-btn" href="#" class="btn-violet btn-sm" download>
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                        Download
+                    </a>
+                    <button class="btn-outline btn-sm" onclick="resetUpload()">Analyze Another</button>
+                </div>
             </div>
+
+            <!-- Right Panel: Analysis Results -->
+            <aside class="panel panel-right">
+                <p class="panel-heading">Analysis Results</p>
+                <div class="vehicle-list" id="up-vehicle-list">
+                    <div class="empty-state">
+                        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="10"/><path d="M12 8v4M12 16h.01"/></svg>
+                        <p>No results yet</p>
+                        <p style="font-size:11px;color:var(--muted-2)">Upload a video to start</p>
+                    </div>
+                </div>
+                <div class="panel-footer" id="up-panel-footer"></div>
+            </aside>
+
         </div>
     </div>
 
 </div>
 
-<script src="/static/main.js?v=4"></script>
+<!-- ── Toast Notification Container ─────────────────────────────── -->
+<div id="toast-container"></div>
+
+<script src="/static/main.js?v=7"></script>
 </body>
 </html>
