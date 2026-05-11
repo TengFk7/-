@@ -4,3 +4,5 @@ opencv-python
 werkzeug
 imageio
 imageio-ffmpeg
+pandas
+matplotlib
